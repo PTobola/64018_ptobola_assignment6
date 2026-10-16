@@ -1,0 +1,110 @@
+---
+title: "AM assignment Mod 6"
+author: "Peter Tobola"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+library(tidyverse)
+library(caret)
+library(pROC)
+library(ggplot2)
+library(corrplot)
+library(class)
+library(lpSolve)
+
+
+```
+
+## Ojbective function:
+## A1, A2, A3 (plant A and warehouse 1,2,3), B1, B2, B3 (plant B and warehouse 1,2,3)
+## Objective: 622XA1 + 614xA2 + 630xA3 + 641xB1 + 645xB2 + 649xB3
+## Constraints:
+## Plant A capacity: xA1 + xA2 + xA3 ≤ 100
+## Plant B capacity: xB1 + xB2 + xB3 ≤ 120
+## AED Demand: XA1 + XB1 = 80, XA2 + XB2 = 60, XA3 + XB3 = 70
+## XAED ≥ 0
+
+
+
+## Name rows
+
+
+
+```{r}
+plants <- c("Plant A", "Plant B")
+warehouses <- c("WH1", "WH2", "WH3")
+
+
+```
+
+## shipping and production cost, constraints per plant, demands per warehouse
+
+```{r}
+shipcosts <- matrix(c(22, 14, 30, 16, 20, 24), nrow = 2, byrow = TRUE, dimnames = list(plants, warehouses))
+product_costs <- c(600, 625)
+plant_capacity <- c(100, 120)
+plant_demand   <- c(80, 60, 70)
+
+
+```
+
+## total costs for shipping and production for each unit
+
+```{r}
+total_costs <- shipcosts + product_costs
+total_costs
+
+
+```
+
+
+## supply and demand constraints
+
+```{r}
+objective_function <- lp.transport(cost.mat   = total_costs, direction  = "min", row.signs  = rep("<=", 2), row.rhs = plant_capacity, col.signs  = rep("=",  3), col.rhs = plant_demand)
+
+```
+
+## shipping solution
+
+```{r}
+shipping <- objective_function$solution
+dimnames(shipping) <- list(plants, warehouses)
+
+
+```
+
+## print solution; AEDs totals at each plant
+## print solution; Plant capacity will reflect 10 unused AEDs remaining at plant B
+## print solution; two shipping options to plant A and B, including 10 unused AEDs to plant B reflect same 
+## costs, meaning two optimal shipping options to plant A and plant B; cost to both = same $132,790.
+
+```{r}
+cat("\nUnits produced: Plant A =", sum(shipping[1, ]),
+    " Plant B =", sum(shipping[2, ]), "\n")
+
+
+cat("Unused capacity: Plant A =", plant_capacity[1] - sum(shipping[1, ]),
+    " Plant B =", plant_capacity[2] - sum(shipping[2, ]), "\n")
+
+cat("Minimum total cost: $", format(objective_function$objval, big.mark = ","), "\n")
+
+
+
+
+```
+
+
+
